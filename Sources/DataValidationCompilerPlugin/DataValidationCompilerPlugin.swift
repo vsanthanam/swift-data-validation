@@ -45,7 +45,7 @@ struct DataValidationCompilerPlugin: CompilerPlugin {
 extension Optional {
 
     func required(
-        reason: @autoclosure () -> String = "Unknown macro excpansion failure"
+        reason: @autoclosure () -> String = "Unknown macro expansion failure"
     ) throws -> Wrapped {
         switch self {
         case let .some(value):
