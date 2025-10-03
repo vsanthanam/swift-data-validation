@@ -1,5 +1,5 @@
 // DataValidation
-// DataValidation.swift
+// URLStringMacro.swift
 //
 // MIT License
 //
@@ -24,40 +24,41 @@
 // SOFTWARE.
 
 import Foundation
+import SwiftCompilerPlugin
+import SwiftSyntax
+import SwiftSyntaxBuilder
+import SwiftSyntaxMacros
 
-@available(macOS 13.0, macCatalyst 16.0, iOS 16.0, watchOS 9.0, tvOS 16.0, visionOS 1.0, *)
-@freestanding(expression)
-public macro URL(
-    _ urlString: StaticString,
-    strictValidation: Bool = true
-) -> URL = #externalMacro(
-    module: "DataValidationCompilerPlugin",
-    type: "URLMacro"
-)
+public struct URLStringMacro: ExpressionMacro, DataValidationMacro {
 
-@available(macOS 13.0, macCatalyst 16.0, iOS 16.0, watchOS 9.0, tvOS 16.0, visionOS 1.0, *)
-@freestanding(expression)
-public macro URLString(
-    _ urlString: StaticString
-) -> String = #externalMacro(
-    module: "DataValidationCompilerPlugin",
-    type: "URLStringMacro"
-)
+    // MARK: - ExpressionMacro
 
-@available(macOS 13.0, macCatalyst 16.0, iOS 16.0, watchOS 9.0, tvOS 16.0, visionOS 1.0, *)
-@freestanding(expression)
-public macro email(
-    _ emailString: StaticString,
-) -> URL = #externalMacro(
-    module: "DataValidationCompilerPlugin",
-    type: "EmailMacro"
-)
+    public static func expansion(
+        of node: some FreestandingMacroExpansionSyntax,
+        in context: some MacroExpansionContext
+    ) throws -> ExprSyntax {
 
-@available(macOS 13.0, macCatalyst 16.0, iOS 16.0, watchOS 9.0, tvOS 16.0, visionOS 1.0, *)
-@freestanding(expression)
-public macro emailString(
-    _ emailString: StaticString,
-) -> String = #externalMacro(
-    module: "DataValidationCompilerPlugin",
-    type: "EmailStringMacro"
-)
+        let segments = try node.arguments.first
+            .required(reason: "#URL requires a string literal segment with no interpolation.")
+            .expression
+            .as(StringLiteralExprSyntax.self)
+            .required(reason: "#URL requires a string literal segment with no interpolation.")
+            .segments
+
+        guard segments.count == 1 else {
+            throw MacroExpansionErrorMessage("#URL requires a string literal segment with no interpolation.")
+        }
+
+        let urlString = try segments.first
+            .required()
+            .as(StringSegmentSyntax.self)
+            .required()
+            .content
+            .text
+
+        try validateURL(urlString, strict: true)
+
+        return "\"\(raw: urlString)\""
+    }
+
+}

@@ -1,5 +1,5 @@
 // DataValidation
-// DataValidationTests.swift
+// DataValidationCompilerPlugin.swift
 //
 // MIT License
 //
@@ -23,9 +23,36 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-@testable import DataValidation
-import Testing
+import SwiftCompilerPlugin
+import SwiftSyntax
+import SwiftSyntaxBuilder
+import SwiftSyntaxMacros
 
-@Test func example() async throws {
-    // Write your test here and use APIs like `#expect(...)` to check expected conditions.
+@main
+struct DataValidationCompilerPlugin: CompilerPlugin {
+
+    // MARK: - CompilerPlugin
+
+    let providingMacros: [any Macro.Type] = [
+        URLMacro.self,
+        URLStringMacro.self,
+        EmailMacro.self,
+        EmailStringMacro.self
+    ]
+
+}
+
+extension Optional {
+
+    func required(
+        reason: @autoclosure () -> String = "Unknown macro excpansion failure"
+    ) throws -> Wrapped {
+        switch self {
+        case let .some(value):
+            value
+        case .none:
+            throw MacroExpansionErrorMessage(reason())
+        }
+    }
+
 }
